@@ -2,9 +2,8 @@ from PIL import Image
 import os
 import numpy as np
 from itertools import islice
-import matplotlib.pyplot as plt
 
-from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.callbacks import ModelCheckpoint
 from keras.models import Model, load_model, Sequential
 from keras.layers import Dense, Activation, Dropout, Input, Masking, TimeDistributed, LSTM, Conv1D
 from keras.layers import GRU, Bidirectional, BatchNormalization, Reshape
@@ -60,7 +59,6 @@ def model(input_shape):
   return model
 
 images = load_images('/home/bernhard/Documents/ml/earthquake/tex_images/')
-images = images.reshape((num_tex, 496, 369))
 ttf = load_ttf('/home/bernhard/Documents/ml/earthquake/tex_ttf/')
 ttf = ttf.reshape((num_tex, 121, 1))
 
@@ -74,25 +72,19 @@ model = model(input_shape = (496, 369))
 
 opt = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, decay=0.01)
 model.compile(loss='binary_crossentropy', optimizer=opt, metrics=["accuracy"])
-early_stopping_monitor = EarlyStopping(patience=3)
 
-history = model.fit(images, ttf, batch_size = 5, validation_split=0.3, epochs=10, callbacks=[early_stopping_monitor])
+# model.fit(images, ttf, batch_size = 5, epochs=10)
+# model.save_weights('eq_weights_squared.h5')
 
-model.save_weights('eq_weights_crossentropy.h5')
+model.load_weights('eq_weights_crossentropy.h5')
+img = images[500].reshape((1, 496, 369))
+preds = model.predict(img, verbose=0)[0]
+preds = np.asarray(preds).astype('float64')
 
-# summarize history for accuracy
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
+for i in preds:
+  print(i)
+
+print('')
+
+for i in ttf[100]:
+  print(i)
